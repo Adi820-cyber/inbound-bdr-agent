@@ -21,6 +21,10 @@ export default defineConfig({
     // Task 1.5: the network/LLM isolation guard replaces global `fetch` with a
     // stub that throws, so no test can reach the network or a live model.
     setupFiles: ["./tests/setup/no-live-calls.ts"],
+    // Property-based tests run hundreds of generated cases each; the 5s default
+    // is too tight for them under parallel load.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     passWithNoTests: true,
   },
 });

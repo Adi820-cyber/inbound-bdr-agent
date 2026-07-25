@@ -603,6 +603,15 @@ export async function runPipeline(options: OrchestratorOptions): Promise<RunArti
         type: "reasoning",
         message: `Run artifact ${runId} could not be persisted: ${reason}. The run itself succeeded.`,
       });
+      // `emit` appended the (already-redacted) event to `events` AFTER the
+      // artifact was snapshotted, so mirror it into the returned artifact too.
+      // Req 11.6 requires the artifact's event array to hold EVERY event the
+      // run emitted, so the trace the client streamed and the trace the
+      // artifact stores can never disagree.
+      const persistenceEvent = events[events.length - 1];
+      if (persistenceEvent !== undefined) {
+        redacted.events.push(persistenceEvent);
+      }
     }
   }
 
@@ -624,9 +633,19 @@ function applyStageProvenance(
 ): unknown {
   switch (stageNumber) {
     case 2:
+      if (output === null || typeof output !== "object") return output;
       return applyProvenanceFilter(output as ResearchReport, isLedgered, emit);
     case 4: {
       const match = output as MatchResult;
+      // Defensive: the provenance gate must never crash a run. A malformed or
+      // degraded match result is returned unchanged (Req 17.1, 17.6).
+      if (
+        match === null ||
+        typeof match !== "object" ||
+        !Array.isArray(match.rankedCorpus)
+      ) {
+        return output;
+      }
       const verifyScored = (scored: ScoredCaseStudy): ScoredCaseStudy => ({
         ...scored,
         record: verifyCaseStudyProvenance(scored.record, isLedgered, emit),
@@ -639,6 +658,7 @@ function applyStageProvenance(
       } satisfies MatchResult;
     }
     case 5:
+      if (output === null || typeof output !== "object") return output;
       return verifyPartnerEvidenceProvenance(output as GtmRecommendation, isLedgered, emit);
     default:
       return output;

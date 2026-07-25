@@ -212,7 +212,7 @@ Language: TypeScript (as specified in the design document).
     - **Property 14: The unknown-field report is exactly the set of unknown values**
     - **Validates: Requirements 5.7, 17.5**
 
-- [ ] 6. Checkpoint - core pipeline plumbing
+- [x] 6. Checkpoint - core pipeline plumbing
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Stage 1 Qualifier
@@ -298,7 +298,7 @@ Language: TypeScript (as specified in the design document).
     - Assert the note states the tone and technical-depth adjustment for an operations-leader persona
     - _Requirements: 6.6_
 
-- [ ] 10. Checkpoint - stages 1 through 3
+- [x] 10. Checkpoint - stages 1 through 3
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 11. Stage 4 case-study discovery
@@ -405,7 +405,7 @@ Language: TypeScript (as specified in the design document).
     - **Property 28: The handoff summary is derived and adds nothing**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7**
 
-- [ ] 15. Checkpoint - all six stages implemented
+- [x] 15. Checkpoint - all six stages implemented
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 16. Run persistence
@@ -437,7 +437,7 @@ Language: TypeScript (as specified in the design document).
     - `src/app/api/runs/[runId]/route.ts`: return the stored `RunArtifact`, 404 when absent
     - _Requirements: 16.2, 16.3_
 
-  - [ ] 17.3 Write unit tests for both routes
+  - [x] 17.3 Write unit tests for both routes
     - Assert the trigger route accepts an absent body (fixed lead) and an alternative raw email, and returns SSE headers
     - Assert the artifact route returns 404 for an unknown run id
     - _Requirements: 1.6, 2.2, 16.2, 16.3_
@@ -484,7 +484,7 @@ Language: TypeScript (as specified in the design document).
     - Six labelled expandable panels, event log adjacency, trigger control presence, lead editor submission, stream-interrupted notice with reload control
     - _Requirements: 11.4, 11.5, 12.1, 12.5, 12.7_
 
-- [ ] 19. Repository hygiene, documentation, and hosting configuration
+- [x] 19. Repository hygiene, documentation, and hosting configuration
   - [x] 19.1 Write the README
     - What the system does, the six-stage architecture, the stage→source-file table with one row per stage, the local run command, every required environment variable, and the deployment target
     - Known limitations section covering every live third-party retrieval dependency, cold starts, cached-corpus staleness, and the dev-only JSON store
@@ -492,7 +492,7 @@ Language: TypeScript (as specified in the design document).
     - Document the model choice rationale: `google/gemma-4-31b-it:free` for `response_format` JSON mode, best free-tier instruction following, a 262K context that fits full retrieved page text, versus the ~34% structured-output error rate of `openai/gpt-oss-20b:free`; state plainly that Gemma's structured-output rate is unreported (the 0.49% figure is tool-call), which is why `OPENROUTER_FALLBACK_MODEL` exists
     - _Requirements: 13.6, 14.3, 15.2, 15.3_
 
-  - [ ] 19.2 Add the web-egress lint rule
+  - [x] 19.2 Add the web-egress lint rule
     - ESLint rule banning `fetch`, `axios`, `undici`, and `node:http` imports outside `src/research/` and `src/providers/`
     - _Requirements: 13.4_
 
@@ -500,24 +500,24 @@ Language: TypeScript (as specified in the design document).
     - Render web service config and package scripts serving the Run Console and the run API from one Node process and public URL
     - _Requirements: 15.4, 15.6_
 
-  - [ ] 19.4 Write repository hygiene static tests
+  - [x] 19.4 Write repository hygiene static tests
     - `tests/unit/repo-hygiene.test.ts`: fixed-lead identifying strings absent from the rubric and GTM modules; no web-egress imports outside the allowed directories; the six stage files exist at their expected paths and each self-declared `sourceFile` equals its own path; the README stage table paths resolve; `.gitignore` covers `.env*`; `.env.example` key set equals the env schema key set
     - _Requirements: 1.1, 8.8, 13.1, 13.2, 13.3, 13.4, 13.6, 14.2, 14.3_
 
-- [ ] 20. Full-pipeline wiring and end-to-end verification
+- [x] 20. Full-pipeline wiring and end-to-end verification
   - [x] 20.1 Wire the artifact assembly and persistence into the pipeline
     - Populate `RunArtifact` with lead profile, all six `StageRecord`s, events, fetch ledger, `unknownFieldReport`, and `providerConfig` (names only), then persist on `complete` or `partial` and stream `run_completed` with the artifact URL
     - _Requirements: 2.4, 5.4, 11.6, 14.5, 16.1_
 
-  - [ ] 20.2 Write property test for total retrieval failure
+  - [x] 20.2 Write property test for total retrieval failure
     - **Property 37: Total retrieval failure produces only unknowns, never placeholders**
     - **Validates: Requirements 17.6**
 
-  - [ ] 20.3 Write opt-in live integration tests
+  - [x] 20.3 Write opt-in live integration tests
     - Behind an env flag: crawl the real FlytBase case-studies index and assert a non-empty corpus with all seven fields present per record; Upstash round-trip through two separate client instances
     - _Requirements: 7.1, 16.5_
 
-- [ ] 21. Final checkpoint - Ensure all tests pass
+- [x] 21. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

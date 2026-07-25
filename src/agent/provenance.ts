@@ -151,6 +151,14 @@ export function applyProvenanceFilter(
   isLedgered: IsLedgered,
   emit: ProvenanceEmit,
 ): ResearchReport {
+  // Defensive: the provenance gate must never be the thing that crashes a run.
+  // A stage output that reached here without a well-formed `claims` array (a
+  // degraded stage, or a shape the schema accepted loosely) is returned
+  // unchanged rather than throwing — the run degrades, per Req 17.1/17.6.
+  if (report === null || typeof report !== "object" || !Array.isArray(report.claims)) {
+    return report;
+  }
+
   const claims = report.claims.map((claim) => filterClaim(claim, isLedgered, emit));
 
   const verifiedClaimCount = claims.filter((c) => c.verificationStatus === "verified").length;
@@ -159,13 +167,18 @@ export function applyProvenanceFilter(
   // stale. Recompute from the filtered claims so a dimension whose only verified
   // claim was just rejected is now listed as unsourced.
   const dimensionsWithNoSource: ResearchDimension[] = [];
-  for (const [dimension, claimIds] of Object.entries(report.claimsByDimension) as [
+  const byDimension =
+    report.claimsByDimension !== null && typeof report.claimsByDimension === "object"
+      ? report.claimsByDimension
+      : {};
+  for (const [dimension, claimIds] of Object.entries(byDimension) as [
     ResearchDimension,
     string[],
   ][]) {
+    const ids = Array.isArray(claimIds) ? claimIds : [];
     const hasSource = claims.some(
       (c) =>
-        claimIds.includes(c.claimId) &&
+        ids.includes(c.claimId) &&
         (c.verificationStatus === "verified" || c.verificationStatus === "stale"),
     );
     if (!hasSource) dimensionsWithNoSource.push(dimension);
