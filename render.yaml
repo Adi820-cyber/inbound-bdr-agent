@@ -1,0 +1,82 @@
+# Render Blueprint for the Inbound BDR Agent (Req 15.4, 15.6)
+#
+# Deploys the Next.js 15 App Router app as a single long-lived Node web
+# service, serving both the Run Console UI and the run API from one public
+# URL. Render keeps the connection open for the life of the response, so the
+# SSE stream can stay open for a full 60-180s run without a per-request
+# duration cap (see design.md "Deployment Decision: Render Over Vercel").
+#
+# Every secret below is declared `sync: false`: Render will prompt for the
+# value in the dashboard on first deploy and never stores it in this file.
+# Do NOT hardcode any secret value here.
+
+services:
+  - type: web
+    name: inbound-bdr-agent
+    runtime: node
+    plan: free
+    # A single long-lived Node process (not Edge) — the crawl and HTML
+    # parsing use Node APIs.
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    # Root path serves the Run Console; a 200 here means the app is awake.
+    healthCheckPath: /
+    envVars:
+      # --- LLM provider selection -------------------------------------------
+      # One of: openai | anthropic | gemini | openrouter
+      - key: LLM_PROVIDER
+        sync: false
+      # Bearer key for OpenAI. Required only when LLM_PROVIDER=openai
+      - key: OPENAI_API_KEY
+        sync: false
+      # Bearer key for Anthropic. Required only when LLM_PROVIDER=anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # API key for Gemini. Required only when LLM_PROVIDER=gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      # Bearer key for the OpenRouter gateway. Required only when LLM_PROVIDER=openrouter
+      - key: OPENROUTER_API_KEY
+        sync: false
+      # Primary model slug used through OpenRouter. Optional
+      - key: OPENROUTER_MODEL
+        sync: false
+      # Secondary model slug tried on a stage's final attempt. Optional
+      - key: OPENROUTER_FALLBACK_MODEL
+        sync: false
+      # HTTP-Referer attribution header. Optional; carries no secret
+      - key: OPENROUTER_APP_URL
+        sync: false
+      # X-Title attribution header. Optional; carries no secret
+      - key: OPENROUTER_APP_TITLE
+        sync: false
+      # Client-side ceiling on LLM requests per rolling minute. Optional; defaults to 20
+      - key: LLM_MAX_RPM
+        sync: false
+      # --- Search provider selection ----------------------------------------
+      # One of: tavily | exa | serper
+      - key: SEARCH_PROVIDER
+        sync: false
+      # API key for Tavily. Required only when SEARCH_PROVIDER=tavily
+      - key: TAVILY_API_KEY
+        sync: false
+      # API key for Exa. Required only when SEARCH_PROVIDER=exa
+      - key: EXA_API_KEY
+        sync: false
+      # API key for Serper. Required only when SEARCH_PROVIDER=serper
+      - key: SERPER_API_KEY
+        sync: false
+      # --- Run store (both required for durable persistence, Req 16.5) -------
+      # Upstash Redis REST endpoint for durable run persistence
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      # Upstash Redis REST token paired with the URL above
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      # --- Retrieval tuning -------------------------------------------------
+      # Maximum number of case-study pages crawled per run. Optional; defaults to 12
+      - key: CRAWL_MAX_PAGES
+        sync: false
+      # Per-request HTTP timeout in milliseconds. Optional; defaults to 15000
+      - key: REQUEST_TIMEOUT_MS
+        sync: false

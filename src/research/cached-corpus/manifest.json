@@ -1,0 +1,49 @@
+{
+  "snapshotAt": "2025-01-15T00:00:00.000Z",
+  "records": [
+    {
+      "sourceUrl": "https://www.flytbase.com/case-studies/autonomous-perimeter-security-mining",
+      "title": "Autonomous perimeter security for a large open-pit mining operation",
+      "industry": "Mining & Metals",
+      "region": "Latin America",
+      "useCase": "Scheduled autonomous drone patrols for perimeter security and intrusion detection across a remote open-pit site",
+      "namedPartner": "Regional drone service provider",
+      "statedResults": "Reduced manual patrol hours and delivered continuous after-hours perimeter coverage with automated alerting",
+      "verificationStatus": "verified",
+      "retrievedAt": "2025-01-15T00:00:00.000Z"
+    },
+    {
+      "sourceUrl": "https://www.flytbase.com/case-studies/oil-and-gas-asset-inspection",
+      "title": "Automated flare stack and storage tank inspections at an energy facility",
+      "industry": "Oil & Gas",
+      "region": "Middle East",
+      "useCase": "Docked drone-in-a-box inspections of flare stacks and tank farms without shutting down continuous operations",
+      "namedPartner": "unknown",
+      "statedResults": "Cut inspection turnaround time and removed the need for personnel to work at height in a regulated environment",
+      "verificationStatus": "verified",
+      "retrievedAt": "2025-01-15T00:00:00.000Z"
+    },
+    {
+      "sourceUrl": "https://www.flytbase.com/case-studies/port-yard-surveillance-logistics",
+      "title": "Yard surveillance and inventory monitoring at a container port",
+      "industry": "Ports & Logistics",
+      "region": "Southeast Asia",
+      "useCase": "Autonomous aerial monitoring of container yards for security, safety compliance, and periodic inventory checks",
+      "namedPartner": "Systems integrator partner",
+      "statedResults": "Improved situational awareness across a multi-terminal footprint and shortened incident response times",
+      "verificationStatus": "verified",
+      "retrievedAt": "2025-01-15T00:00:00.000Z"
+    },
+    {
+      "sourceUrl": "https://www.flytbase.com/case-studies/utility-substation-inspection",
+      "title": "Routine substation inspections for an electric utility",
+      "industry": "Utilities & Energy",
+      "region": "North America",
+      "useCase": "Automated recurring inspections of substation equipment using a fixed drone-in-a-box deployment",
+      "namedPartner": "unknown",
+      "statedResults": "Standardized inspection imagery capture and reduced dependence on scheduled manual field visits",
+      "verificationStatus": "verified",
+      "retrievedAt": "2025-01-15T00:00:00.000Z"
+    }
+  ]
+}

@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inbound BDR Agent — Thinking Map</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fb;
+        --ink: #1f2430;
+        --ink-2: #535b6b;
+        --ink-3: #8a93a6;
+        --line: #e2e6ee;
+        --stage: #ffffff;
+        --decision: #fbebcf;
+        --decision-border: #e5bf77;
+        --route: #d8f0e4;
+        --route-border: #aedcc6;
+        --stop: #f8dce3;
+        --stop-border: #edacbd;
+        --note: #e6e0f4;
+        --note-border: #c9bee8;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        padding: 28px 18px 56px;
+      }
+
+      main { width: min(980px, 100%); margin: 0 auto; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 24px; letter-spacing: -0.03em; }
+
+      .sub {
+        margin-top: 6px;
+        max-width: 760px;
+        color: var(--ink-2);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .legend {
+        display: flex; flex-wrap: wrap; gap: 12px;
+        margin: 18px 0 26px;
+        color: var(--ink-2); font-size: 11px;
+      }
+
+      .lg { display: inline-flex; align-items: center; gap: 6px; }
+      .sw { width: 14px; height: 14px; border: 1.5px solid var(--line); border-radius: 4px; background: #fff; }
+      .sw.dec { width: 12px; height: 12px; border-color: var(--decision-border); background: var(--decision); transform: rotate(45deg); }
+      .sw.route { border-color: var(--route-border); background: var(--route); }
+      .sw.stop { border-color: var(--stop-border); background: var(--stop); }
+      .sw.notesw { border-color: var(--note-border); background: var(--note); border-style: dashed; }
+
+      .flow, .col, .branch-col {
+        display: flex; flex-direction: column; align-items: center;
+      }
+      .flow { gap: 0; }
+
+      .section {
+        width: 100%;
+        margin: 26px 0 12px;
+        border-bottom: 1.5px solid var(--line);
+        padding-bottom: 6px;
+        color: var(--ink-3);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .node, .decision, .route, .stop, .note {
+        width: min(620px, 100%);
+        border-radius: 12px;
+        padding: 12px 15px;
+        text-align: center;
+      }
+
+      .node { border: 1.5px solid var(--line); background: var(--stage); }
+      .decision { border: 1.5px solid var(--decision-border); background: var(--decision); }
+      .route { border: 1.5px solid var(--route-border); background: var(--route); }
+      .stop { border: 1.5px solid var(--stop-border); background: var(--stop); }
+      .note { border: 1.5px dashed var(--note-border); background: var(--note); }
+
+      .tag {
+        display: block; margin-bottom: 4px;
+        color: var(--ink-3); font-size: 9px; font-weight: 800;
+        letter-spacing: 0.08em; text-transform: uppercase;
+      }
+      .title { font-size: 14px; font-weight: 800; }
+      .desc { margin-top: 4px; color: var(--ink-2); font-size: 11px; line-height: 1.45; text-align: left; }
+
+      .slot {
+        margin-top: 9px;
+        border: 1px dashed rgba(31,36,48,0.28);
+        border-radius: 8px;
+        background: rgba(255,255,255,0.62);
+        padding: 9px 10px;
+        color: var(--ink-2);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        line-height: 1.45;
+        text-align: left;
+      }
+
+      .arrow {
+        position: relative; width: 2px; height: 22px; background: var(--ink-3);
+      }
+      .arrow::after {
+        content: "";
+        position: absolute; bottom: -1px; left: -4px;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 7px solid var(--ink-3);
+      }
+
+      .split {
+        margin: 5px 0;
+        color: var(--ink-3);
+        font-size: 10px; font-weight: 800;
+        letter-spacing: 0.08em; text-transform: uppercase;
+      }
+
+      .branch {
+        display: flex; flex-wrap: wrap; justify-content: center;
+        gap: 18px; width: 100%;
+      }
+      .branch-col { flex: 1; min-width: 260px; gap: 7px; display: flex; flex-direction: column; align-items: center; }
+
+      .notes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px; width: 100%;
+      }
+      .notes .note { min-height: 128px; }
+
+      @media (max-width: 760px) {
+        .branch-col, .notes { min-width: 100%; grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Inbound BDR Agent — Thinking Map</h1>
+      <p class="sub">
+        How I broke the problem down: a single inbound email → six deterministic stages →
+        a fully qualified, researched, and routed AE handoff with zero fabricated data.
+      </p>
+
+      <div class="legend">
+        <span class="lg"><span class="sw"></span>Stage</span>
+        <span class="lg"><span class="sw dec"></span>Decision</span>
+        <span class="lg"><span class="sw route"></span>Output</span>
+        <span class="lg"><span class="sw stop"></span>Fallback / Degradation</span>
+        <span class="lg"><span class="sw notesw"></span>Design Decision</span>
+      </div>
+
+      <!-- ═══════ MAIN FLOW ═══════ -->
+      <section class="flow" aria-label="Solution flowchart">
+        <div class="section" style="margin-top: 0">Input &amp; Normalization</div>
+
+        <div class="node">
+          <span class="tag">Entry</span>
+          <div class="title">📧 Inbound Contact-Form Email</div>
+          <div class="slot">Fixed lead: Rodrigo Castillo, SQM, Atacama lithium sites (or any email pasted via Lead Editor)</div>
+        </div>
+        <div class="arrow"></div>
+
+        <div class="node">
+          <span class="tag">Normalize</span>
+          <div class="title">Lead Normalizer → LeadProfile</div>
+          <div class="slot">Extract: senderName, company, title, country, industry, useCase, painPoints, referralSource, statedTimeline<br/>Missing fields → "unknown" (never null, never placeholder)</div>
+        </div>
+        <div class="arrow"></div>
+
+        <div class="decision">
+          <span class="tag">Orchestrator</span>
+          <div class="title">🧠 Pipeline Orchestrator</div>
+          <div class="slot">Runs stages 1→6 in fixed order. Each stage: validate output via Zod schema → up to 3 retries (fallback model on final attempt) → degrade to "unknown" if exhausted. Events streamed via SSE.</div>
+        </div>
+        <div class="arrow"></div>
+
+        <!-- ═══════ STAGES ═══════ -->
+        <div class="section">Six-Stage Pipeline</div>
+
+        <div class="node">
+          <span class="tag">Stage 1</span>
+          <div class="title">Qualifier</div>
+          <div class="desc">
+            <strong>Source:</strong> <code>src/agent/stages/stage-1-qualifier.ts</code><br/>
+            <strong>Input:</strong> LeadProfile<br/>
+            <strong>Output:</strong> QualificationResult
+          </div>
+          <div class="slot">
+            • Select best framework: MEDDPICC / BANT / SPICED — justify with ≥2 lead attributes<br/>
+            • Classify every slot as known (with evidence quote + sourceLeadField) or unknown<br/>
+            • Priority score 0–100 with named factor breakdown<br/>
+            • Fit assessment: strong / moderate / weak
+          </div>
+        </div>
+        <div class="arrow"></div>
+
+        <div class="node">
+          <span class="tag">Stage 2</span>
+          <div class="title">Researcher</div>
+          <div class="desc">
+            <strong>Source:</strong> <code>src/agent/stages/stage-2-researcher.ts</code><br/>
+            <strong>Input:</strong> LeadProfile<br/>
+            <strong>Output:</strong> ResearchReport
+          </div>
+          <div class="slot">
+            • Five dimensions: org_structure, budget_signals, recent_news, leadership_language, positioning<br/>
+            • Live web search (Serper/Tavily/Exa) → fetch top 3 hits per dimension<br/>
+            • Every claim carries: sourceUrl, retrievedAt, verificationStatus<br/>
+            • Provenance-tracked via FetchLedger (URL, HTTP status, timestamp)<br/>
+            • Dimension with zero results → single claim with "unknown" + dimensionsWithNoSource
+          </div>
+        </div>
+        <div class="arrow"></div>
+
+        <div class="node">
+          <span class="tag">Stage 3</span>
+          <div class="title">Responder</div>
+          <div class="desc">
+            <strong>Source:</strong> <code>src/agent/stages/stage-3-responder.ts</code><br/>
+            <strong>Input:</strong> QualificationResult + ResearchReport<br/>
+            <strong>Output:</strong> EmailSequence (exactly 3 drafts)
+          </div>
+          <div class="slot">
+            • Each email references ≥1 verified research claim<br/>
+            • Each targets 1–2 unknown qualification slots to elicit info<br/>
+            • ≥3 distinct unknown slots covered across the sequence<br/>
+            • Progression rationale on emails 2 &amp; 3<br/>
+            • Zero verified claims → lead-facts-only prompt + researchUnavailableNotice
+          </div>
+        </div>
+        <div class="arrow"></div>
+
+        <!-- Stage 4 with decision branch -->
+        <div class="node">
+          <span class="tag">Stage 4</span>
+          <div class="title">Case Study Matcher</div>
+          <div class="desc">
+            <strong>Source:</strong> <code>src/agent/stages/stage-4/</code> (extractor, scoring-rubric, ranking, serializer)<br/>
+            <strong>Input:</strong> QualificationResult + ResearchReport<br/>
+            <strong>Output:</strong> MatchResult
+          </div>
+          <div class="slot">
+            <strong>Step 1 — Live Discovery:</strong> Crawl FlytBase case-studies index at runtime, extract anchor hrefs, fetch each page, LLM-extract structured CaseStudyRecord<br/>
+            <strong>Step 2 — Rubric Scoring:</strong> Pure deterministic rubric, four dimensions:<br/>
+            &nbsp;&nbsp;• industry (0.35) — taxonomy match against lead industry<br/>
+            &nbsp;&nbsp;• geography (0.25) — country → region match<br/>
+            &nbsp;&nbsp;• useCase (0.30) — use-case keyword overlap<br/>
+            &nbsp;&nbsp;• partnerOverlap (0.10) — referral/partner name overlap<br/>
+            <strong>Step 3 — Ranking:</strong> Score all records, rank 1..n, select winner + runner-up, compute deciding dimensions
+          </div>
+        </div>
+
+        <div class="split">live crawl fails?</div>
+        <div class="branch">
+          <div class="branch-col">
+            <div class="stop">
+              <span class="tag">Fallback</span>
+              <div class="title">Cached Corpus</div>
+              <div class="slot">Load committed snapshot from src/research/cached-corpus/<br/>Mark all records verificationStatus: "stale"<br/>Emit StageEvent with snapshot timestamp</div>
+            </div>
+          </div>
+          <div class="branch-col">
+            <div class="stop">
+              <span class="tag">No Cache</span>
+              <div class="title">Stage Failed</div>
+              <div class="slot">matchResult = "unknown"<br/>Run continues as partial</div>
+            </div>
+          </div>
+        </div>
+        <div class="arrow"></div>
+
+        <div class="node">
+          <span class="tag">Stage 5</span>
+          <div class="title">GTM Advisor</div>
+          <div class="desc">
+            <strong>Source:</strong> <code>src/agent/stages/stage-5-gtm-advisor.ts</code> + <code>stage-5/gtm-decision.ts</code><br/>
+            <strong>Input:</strong> QualificationResult + ResearchReport + MatchResult<br/>
+            <strong>Output:</strong> GtmRecommendation
+          </div>
+          <div class="slot">
+            • Search FlytBase public material for partner signals in lead's geography<br/>
+            • Complexity scoring: siteCount, continuousOps, regulatedEnvironment, multiStakeholder, dealSizeIndicator<br/>
+            • Pure decision: direct_ae vs partner_led<br/>
+            • partner_led requires: partnerType + ledgered sourceUrl<br/>
+            • No partner signal → derivedWithoutPartnerEvidence: true
+          </div>
+        </div>
+        <div class="arrow"></div>
+
+        <div class="node">
+          <span class="tag">Stage 6</span>
+          <div class="title">Handoff Generator</div>
+          <div class="desc">
+            <strong>Source:</strong> <code>src/agent/stages/stage-6-handoff-generator.ts</code> (in progress)<br/>
+            <strong>Input:</strong> All five upstream outputs<br/>
+            <strong>Output:</strong> HandoffSummary
+          </div>
+          <div class="slot">
+            • Buyer context paragraph<br/>
+            • Qualification status: priority score, known-field count, unknown slots<br/>
+            • Top 3 verified findings with source URLs<br/>
+            • Recommended case study + why it won<br/>
+            • Suggested next step consistent with GTM motion
+          </div>
+        </div>
+        <div class="arrow"></div>
+
+        <!-- ═══════ OUTPUT ═══════ -->
+        <div class="section">Output &amp; Persistence</div>
+
+        <div class="route">
+          <span class="tag">Output</span>
+          <div class="title">📦 RunArtifact</div>
+          <div class="slot">
+            LeadProfile + 6 StageRecords + all StageEvents + FetchLedger + unknownFieldReport + providerConfig
+          </div>
+        </div>
+
+        <div class="split">persistence / streaming</div>
+        <div class="branch">
+          <div class="branch-col">
+            <div class="route">
+              <span class="tag">Store</span>
+              <div class="title">Upstash Redis (durable) or JSON file (dev)</div>
+              <div class="slot">Persisted by runId<br/>Accessible at /runs/{runId}</div>
+            </div>
+          </div>
+          <div class="branch-col">
+            <div class="route">
+              <span class="tag">Stream</span>
+              <div class="title">SSE via POST /api/run</div>
+              <div class="slot">Monotonic seq numbers<br/>15s heartbeat keepalive<br/>Run continues server-side on disconnect</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════ UI ═══════ -->
+        <div class="section">Run Console UI</div>
+
+        <div class="node">
+          <span class="tag">UI</span>
+          <div class="title">🖥️ Run Console</div>
+          <div class="slot">
+            • RunTrigger + LeadEditor (paste alternative email)<br/>
+            • 6 expandable StagePanel components (status badge: pending → running → complete/failed)<br/>
+            • StageEventLog alongside each stage output<br/>
+            • SourceLink: every URL is a clickable &lt;a target="_blank"&gt; with verification status + timestamp on hover<br/>
+            • LimitationsPanel: transparently reports every "unknown" field<br/>
+            • StreamInterruptedNotice: "Reload Results" + "Retry" controls<br/>
+            • /runs/[runId] stored-run viewer (permalink)
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ DESIGN DECISIONS ═══════ -->
+      <section aria-label="Design decisions">
+        <div class="section">Key Design Decisions</div>
+        <div class="notes">
+          <div class="note">
+            <span class="tag">Anti-Fabrication</span>
+            <div class="title">Maybe&lt;T&gt; = T | "unknown"</div>
+            <div class="slot">
+              If a fact can't be verified → literal "unknown"<br/>
+              Never null, never placeholder, never hallucinated<br/>
+              Enforced at compile-time (TypeScript strict) AND runtime (Zod schemas)<br/>
+              degradedOutput() is the single chokepoint<br/>
+              FetchLedger rejects claims with unledgered URLs
+            </div>
+          </div>
+          <div class="note">
+            <span class="tag">Contract Validation</span>
+            <div class="title">Retry + Fallback Model</div>
+            <div class="slot">
+              Every stage output validated against Zod schema<br/>
+              Up to 3 attempts per stage<br/>
+              Validation errors feed back into next attempt<br/>
+              Final attempt uses fallback model (if configured)<br/>
+              Budget exhausted → "unknown", continue downstream
+            </div>
+          </div>
+          <div class="note">
+            <span class="tag">Pluggable Providers</span>
+            <div class="title">Swap via env vars, zero code changes</div>
+            <div class="slot">
+              LLM: Gemini / OpenAI / Anthropic / OpenRouter<br/>
+              Search: Serper / Tavily / Exa<br/>
+              Store: Upstash Redis / JSON file<br/>
+              RPM throttle shared across all stages<br/>
+              Rate-limit → graceful degradation, not crash
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ PROOF ═══════ -->
+      <section aria-label="Proof">
+        <div class="section">Proof</div>
+        <div class="notes">
+          <div class="note">
+            <span class="tag">Type Safety</span>
+            <div class="title">npx tsc --noEmit → 0 errors</div>
+            <div class="slot">
+              strict: true, noUncheckedIndexedAccess: true<br/>
+              Zero "as any" casts in UI layer<br/>
+              Every Maybe&lt;T&gt; narrowed with !== "unknown" before property access
+            </div>
+          </div>
+          <div class="note">
+            <span class="tag">Testing</span>
+            <div class="title">Property-based + Component + Unit</div>
+            <div class="slot">
+              fast-check: artifact round-trip, framework justification, scoring sensitivity, fetch ledger immutability<br/>
+              Testing Library: stage panels, event log, trigger, lead editor<br/>
+              Unit: normalizer, orchestrator, providers<br/>
+              All tests isolated — no network, no live LLM
+            </div>
+          </div>
+          <div class="note">
+            <span class="tag">Transparency</span>
+            <div class="title">Nothing hidden behind debug toggles</div>
+            <div class="slot">
+              Framework justification: visible text<br/>
+              Scoring rubric breakdown: visible table<br/>
+              Email progression rationale: visible text<br/>
+              Case study match dimensions: visible breakdown<br/>
+              GTM reasoning + complexity signals: visible<br/>
+              All source URLs: clickable links
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ TECH STACK ═══════ -->
+      <section aria-label="Stack">
+        <div class="section">Technology Stack</div>
+        <div class="note" style="width:100%">
+          <span class="tag">Stack</span>
+          <div class="slot">
+            <strong>Framework:</strong> Next.js 15 (App Router) + TypeScript strict &nbsp;|&nbsp;
+            <strong>UI:</strong> React 19 &nbsp;|&nbsp;
+            <strong>Validation:</strong> Zod 4 &nbsp;|&nbsp;
+            <strong>Testing:</strong> Vitest + fast-check + Testing Library &nbsp;|&nbsp;
+            <strong>Storage:</strong> Upstash Redis / JSON file &nbsp;|&nbsp;
+            <strong>Hosting:</strong> Render web service
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
