@@ -80,3 +80,12 @@ services:
       # Per-request HTTP timeout in milliseconds. Optional; defaults to 15000
       - key: REQUEST_TIMEOUT_MS
         sync: false
+      # --- Inbound webhook auth + AE handoff delivery (both optional) ---
+      # Optional Slack-compatible incoming webhook the Stage 6 handoff is POSTed to;
+      # when unset, delivery is skipped and the run is unaffected
+      - key: AE_HANDOFF_WEBHOOK_URL
+        sync: false
+      # Optional shared secret required in the `x-webhook-secret` header on
+      # POST /api/inbound; when unset the endpoint is open (demo mode)
+      - key: INBOUND_WEBHOOK_SECRET
+        sync: false
