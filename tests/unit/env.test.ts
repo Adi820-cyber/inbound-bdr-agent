@@ -66,6 +66,9 @@ function recognizedEnvKeys(): Set<string> {
     // Retrieval tuning
     "CRAWL_MAX_PAGES",
     "REQUEST_TIMEOUT_MS",
+    // Optional inbound-webhook auth + AE handoff delivery
+    "AE_HANDOFF_WEBHOOK_URL",
+    "INBOUND_WEBHOOK_SECRET",
   ]);
 }
 

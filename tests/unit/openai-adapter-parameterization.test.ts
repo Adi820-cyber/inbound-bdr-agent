@@ -103,6 +103,8 @@ function makeConfig(overrides: Partial<EnvConfig> = {}): EnvConfig {
     runStoreDurable: false,
     crawlMaxPages: 12,
     requestTimeoutMs: 15000,
+    aeHandoffWebhookUrl: undefined,
+    inboundWebhookSecret: undefined,
     ...overrides,
   };
 }

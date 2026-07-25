@@ -66,8 +66,15 @@ const SOURCE_FILE = "src/agent/stages/stage-4-matcher.ts";
 /** Stage 4 depends only on the LeadProfile, which is always present in ctx. */
 const DEPENDS_ON = [] as const;
 
-/** The FlytBase case-studies index — discovered at runtime, not hardcoded per lead. */
-const FLYTBASE_CASE_STUDIES_INDEX_URL = "https://www.flytbase.com/case-studies";
+/**
+ * The FlytBase case-studies index — discovered at runtime, not hardcoded per lead.
+ *
+ * NOTE the apex host with NO `www.`: the live site serves every case-study link
+ * as `https://flytbase.com/case-studies/<slug>`. Using `www.flytbase.com` here
+ * would make the enumerator's same-origin filter reject every real link as
+ * off-origin, silently yielding an empty corpus on every run.
+ */
+const FLYTBASE_CASE_STUDIES_INDEX_URL = "https://flytbase.com/case-studies";
 
 const STAGE_INFO = { stage: STAGE, stageName: STAGE_NAME } as const;
 

@@ -95,6 +95,21 @@ export interface EnvConfig {
   readonly crawlMaxPages: number;
   /** Per-request HTTP timeout in milliseconds for search and page fetches. */
   readonly requestTimeoutMs: number;
+
+  /**
+   * OPTIONAL. Destination for the Stage 6 AE handoff notification (a Slack
+   * incoming-webhook URL, or any endpoint that accepts a JSON POST). When
+   * absent, `deliverHandoff()` reports `delivered: false` and the run is
+   * otherwise unaffected — delivery is a best-effort side channel, never a
+   * required dependency.
+   */
+  readonly aeHandoffWebhookUrl: string | undefined;
+  /**
+   * OPTIONAL. Shared secret the `POST /api/inbound` webhook requires in the
+   * `x-webhook-secret` header. When absent the endpoint is open (demo mode);
+   * when present, a request without a matching header is rejected with 401.
+   */
+  readonly inboundWebhookSecret: string | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -273,7 +288,31 @@ export function parseEnv(env: RawEnv): EnvConfig {
 
     crawlMaxPages: tuning.CRAWL_MAX_PAGES,
     requestTimeoutMs: tuning.REQUEST_TIMEOUT_MS,
+
+    aeHandoffWebhookUrl: read(env, "AE_HANDOFF_WEBHOOK_URL"),
+    inboundWebhookSecret: read(env, "INBOUND_WEBHOOK_SECRET"),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Optional-variable accessors
+//
+// These two variables gate OPTIONAL features (inbound webhook auth, AE handoff
+// delivery) that must work even when the rest of the configuration is
+// incomplete — a missing `TAVILY_API_KEY` should not turn an unset webhook URL
+// into a crash. They therefore read the raw environment directly instead of
+// going through `getConfig()`'s required-variable validation. This module stays
+// the ONLY place in the codebase that touches `process.env`.
+// ---------------------------------------------------------------------------
+
+/** The optional AE handoff webhook URL, or `undefined` when unset/blank. */
+export function getAeHandoffWebhookUrl(): string | undefined {
+  return read(process.env as RawEnv, "AE_HANDOFF_WEBHOOK_URL");
+}
+
+/** The optional inbound webhook shared secret, or `undefined` when unset/blank. */
+export function getInboundWebhookSecret(): string | undefined {
+  return read(process.env as RawEnv, "INBOUND_WEBHOOK_SECRET");
 }
 
 // ---------------------------------------------------------------------------

@@ -115,6 +115,51 @@ const NUMBER_WORDS: Record<string, number> = {
 /** Comma-delimited title segments that name an org unit rather than a role. */
 const DIVISION_CUES = /\b(division|unit|department|group|team|office|business unit)\b/i;
 
+/**
+ * Generic industry vocabulary → canonical industry label. Keys are commodity,
+ * process, and asset-class terms only — never a company name — so this
+ * generalizes to any inbound lead (Req 8.8's spirit applied to normalization).
+ *
+ * This exists because `industry` is the highest-weighted dimension in the Stage 4
+ * scoring rubric (0.35). Leaving it `"unknown"` made that dimension score 0.0 for
+ * every case study on every run, so the match was decided by geography and use
+ * case alone. The vocabulary below is deliberately conservative: a lead whose
+ * text matches nothing still resolves to `"unknown"` rather than a guess (Req 1.4).
+ */
+const INDUSTRY_VOCABULARY: ReadonlyArray<readonly [string, readonly string[]]> = [
+  [
+    "Mining",
+    [
+      "mining",
+      "mine",
+      "mines",
+      "lithium",
+      "copper",
+      "iodine",
+      "potassium",
+      "ore",
+      "tailings",
+      "open-pit",
+      "open pit",
+      "salt flat",
+      "salar",
+      "smelter",
+      "quarry",
+      "stockpile",
+      "concentrator",
+    ],
+  ],
+  ["Oil & Gas", ["oil", "gas", "refinery", "pipeline", "flare stack", "petrochemical", "upstream", "downstream"]],
+  ["Solar", ["solar", "photovoltaic", "solar pv", "pv plant"]],
+  ["Utilities & Energy", ["utility", "utilities", "substation", "power plant", "transmission line", "hydropower", "grid"]],
+  ["Agriculture", ["agriculture", "farm", "farming", "livestock", "plantation", "ranch", "crop", "orchard"]],
+  ["Construction & Infrastructure", ["construction", "infrastructure", "building site", "civil works"]],
+  ["Ports & Maritime", ["port", "terminal", "container yard", "harbour", "harbor", "maritime"]],
+  ["Transportation", ["rail", "railway", "railroad", "highway", "airport", "logistics", "warehouse"]],
+  ["Public Safety", ["public safety", "emergency response", "first responder", "fire department", "police"]],
+  ["Site Security", ["security", "surveillance", "perimeter", "intrusion", "guarding"]],
+];
+
 // ---------------------------------------------------------------------------
 // Small pure helpers
 // ---------------------------------------------------------------------------
@@ -297,6 +342,47 @@ function deriveStatedUseCase(record: RawEmailRecord): Maybe<string> {
   return isBlank(record.subject) ? UNKNOWN : collapse(record.subject);
 }
 
+/**
+ * Infer the account's industry from generic vocabulary in the subject, body, and
+ * contact-form fields. The label with the most distinct term hits wins; a tie or
+ * zero hits yields `UNKNOWN` so nothing is invented (Req 1.4).
+ *
+ * A contact-form `industry` field, when supplied, always takes precedence over
+ * inference.
+ */
+function deriveIndustry(record: RawEmailRecord): Maybe<string> {
+  const stated = record.formFields?.industry;
+  if (!isBlank(stated)) return collapse(stated as string);
+
+  const haystack = `${record.subject ?? ""} ${flatBody(record)} ${Object.values(
+    record.formFields ?? {},
+  ).join(" ")}`.toLowerCase();
+  if (haystack.trim().length === 0) return UNKNOWN;
+
+  let best: string | undefined;
+  let bestHits = 0;
+  let tied = false;
+
+  for (const [label, terms] of INDUSTRY_VOCABULARY) {
+    let hits = 0;
+    for (const term of terms) {
+      // Word-bounded so "mine" does not match inside "determine".
+      const pattern = new RegExp(`(?<![a-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![a-z0-9])`);
+      if (pattern.test(haystack)) hits += 1;
+    }
+    if (hits > bestHits) {
+      bestHits = hits;
+      best = label;
+      tied = false;
+    } else if (hits === bestHits && hits > 0) {
+      tied = true;
+    }
+  }
+
+  if (best === undefined || bestHits === 0 || tied) return UNKNOWN;
+  return best;
+}
+
 /** Build a stable, id-safe lead id from the best available identifier. */
 function deriveLeadId(senderEmail: Maybe<string>, companyDomain: Maybe<string>): string {
   if (companyDomain !== UNKNOWN) return `lead_${slug(companyDomain)}`;
@@ -352,9 +438,11 @@ export function normalizeLead(
     companyDomain,
     country,
     region,
-    // Industry is not deterministically derivable from a raw email without
-    // inference, so it is left for downstream qualification; honest UNKNOWN here.
-    industry: UNKNOWN,
+    // Inferred from generic industry vocabulary in the email text (a contact-form
+    // `industry` field wins when present). Feeds the highest-weighted Stage 4
+    // rubric dimension; resolves to UNKNOWN when the text supports no single
+    // label, so nothing is invented (Req 1.4).
+    industry: deriveIndustry(rawEmail),
     statedUseCase: deriveStatedUseCase(rawEmail),
     statedPainPoints: [],
     referralSource: deriveReferralSource(rawEmail),
